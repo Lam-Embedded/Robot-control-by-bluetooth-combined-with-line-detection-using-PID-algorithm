@@ -2,10 +2,12 @@
 #include "SoftwareSerial.h"
 #include <PID_v1.h>
 
-SoftwareSerial HC06(3, 2); //TX, RX
+SoftwareSerial HC06(4, 5); //TX, RX
 
-#define VCC 5
-#define GND 4
+#define VCC 2
+#define GND 3
+#define PLUS_SPEED 105
+
 int ENA = 6;
 int IN1 = 7;
 int IN2 = 8;
@@ -34,20 +36,21 @@ double Kp = 16.5, Ki = 0.0291, Kd = 3.499999;
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 int8_t sensor;
 
-void tien();
-void lui();
-void trai();
-void phai();
-void tien_trai();
-void tien_phai();
-void lui_trai();
-void lui_phai();
+void forward(uint8_t plus_speed);
+void backward(uint8_t plus_speed);
+void turnLeft(uint8_t plus_speed);
+void turnRight(uint8_t plus_speed);
+void tien_trai(uint8_t plus_speed);
+void tien_phai(uint8_t plus_speed);
+void lui_trai(uint8_t plus_speed);
+void lui_phai(uint8_t plus_speed);
 void Stop();
 void motorControl(int16_t duty_value);
 void scan_sensor();
 void follow_line();
 void forward(); 
 int distance();
+void check_distance();
 
 void setup() {
     HC06.begin(9600);
@@ -69,14 +72,12 @@ void setup() {
     pinMode(line_5, INPUT);
     // Thiet lap PID
     Input = 0; 
-    myPID.SetSampleTime(1); // thời gian lấy mẫu phụ thuộc tốc độ xe, lấy mẫu càng nhanh càng tốt
+    myPID.SetSampleTime(1);
     myPID.SetMode(AUTOMATIC); 
     myPID.SetOutputLimits(-speed_robot, speed_robot);
     // setup ultrasonic
     pinMode(trig,OUTPUT);
     pinMode(echo,INPUT);
-    // analogWrite(ENA, speed_robot);
-    // analogWrite(ENB, speed_robot);
     digitalWrite(VCC, HIGH);
     digitalWrite(GND, LOW);
 }
@@ -86,22 +87,26 @@ void loop()  {
         dieu_khien = HC06.read();
         Serial.println(dieu_khien);
         switch (dieu_khien) {
-            case 'U':
-                while (HC06.read() != 'u') {
+            case 'X':
+                while (HC06.read() != 'x') {
                     follow_line();
+                    if (HC06.read() == 'x') {
+                        Stop();
+                        break;
+                    }
                 }
                 break;
             case 'F':
-                tien();
+                forward(PLUS_SPEED);
                 break;
             case 'B':
-                lui();
+                backward(PLUS_SPEED);
                 break;
             case 'L':
-                trai();
+                turnLeft(PLUS_SPEED);
                 break;
             case 'R':
-                phai();
+                turnRight(PLUS_SPEED);
                 break;
             case 'I':
                 tien_phai();
@@ -182,71 +187,71 @@ void forward() {
     digitalWrite(IN4, HIGH);
 }
 
-void lui() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void backward(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
     digitalWrite(IN3, HIGH);
     digitalWrite(IN4, LOW);
 }
 
-void tien() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void forward(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
     digitalWrite(IN3, LOW);
     digitalWrite(IN4, HIGH);
 }
 
-void phai() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void turnLeft(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
     digitalWrite(IN3, LOW);
     digitalWrite(IN4, HIGH);
 }
 
-void trai() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void turnRight(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
     digitalWrite(IN3, HIGH);
     digitalWrite(IN4, LOW);
 }
-void tien_trai() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void tien_trai(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, LOW);
     digitalWrite(IN3, HIGH);
     digitalWrite(IN4, LOW);
 
 }
-void tien_phai() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void tien_phai(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
     digitalWrite(IN3, LOW);
     digitalWrite(IN4, LOW);
 
 }
-void lui_phai() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void lui_phai(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
     digitalWrite(IN3, LOW);
     digitalWrite(IN4, LOW);
 
 }
-void lui_trai() {
-    analogWrite(ENA, speed_robot + 105);
-    analogWrite(ENB, speed_robot + 105);
+void lui_trai(uint8_t plus_speed) {
+    analogWrite(ENA, speed_robot + plus_speed);
+    analogWrite(ENB, speed_robot + plus_speed);
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, LOW);
     digitalWrite(IN3, LOW);
@@ -260,6 +265,20 @@ void Stop() {
 }
 
 void follow_line() {
+    static bool obstacle_detected = false;
+
+    int dis = distance();
+
+    if (dis <= 30) {
+        Stop();
+        obstacle_detected = true;
+        return;
+    }
+
+    if (obstacle_detected && dis > 20) {
+        obstacle_detected = false;
+    }
+
     Setpoint = 0;
     scan_sensor();
     Input = -sensor;
@@ -267,18 +286,34 @@ void follow_line() {
     motorControl(Output);
 }
 
+//hàm đo khhoảng cách 
 int distance() {
     unsigned long duration; 
-    int distance;        
+    int distance_cm;        
     
-    digitalWrite(trig,0);   // tắt chân trig
+    digitalWrite(trig, LOW);   
     delayMicroseconds(2);
-    digitalWrite(trig,1);   // phát xung từ chân trig
-    delayMicroseconds(5);   // xung có độ dài 5 microSeconds
-    digitalWrite(trig,0);   // tắt chân trig
-     
-    duration = pulseIn(echo,HIGH);   
-    distance = int(duration/2/29.412);
-    delay(200);
-    return distance;
+    digitalWrite(trig, HIGH);  
+    delayMicroseconds(5);      
+    digitalWrite(trig, LOW);   
+    
+    duration = pulseIn(echo, HIGH);   
+    distance_cm = int(duration / 2 / 29.412); // Công thức tính khoảng cách
+    delay(50); // delay nhỏ hơn cho mượt hơn
+    return distance_cm;
+}
+
+void check_distance() {
+    static bool obstacle_detected = false;
+    int dis = distance();
+
+    if (dis <= 30) {
+        Stop();
+        obstacle_detected = true;
+        return;
+    }
+
+    if (obstacle_detected && dis > 20) {
+        obstacle_detected = false;
+    }
 }
